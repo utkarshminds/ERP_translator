@@ -1,11 +1,13 @@
 import streamlit as st
 import pandas as pd
-from deep_translator import GoogleTranslator
-
+import deepl  # Import the deepl library
 import hmac
+import numpy as np
+# DeepL API key (use your actual API key)
+DEEPL_API_KEY = st.secrets["DEEPL_API_KEY"]["DEEPL_API_KEY"]  # Replace with your DeepL API key
+translator = deepl.Translator(DEEPL_API_KEY)
 
-
-
+# Function to check username and password
 def check_password():
     """Returns `True` if the user had a correct password."""
 
@@ -18,11 +20,8 @@ def check_password():
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        if st.session_state["username"] in st.secrets[
-            "passwords"
-        ] and hmac.compare_digest(
-            st.session_state["password"],
-            st.secrets.passwords[st.session_state["username"]],
+        if st.session_state["username"] in st.secrets["passwords"] and hmac.compare_digest(
+            st.session_state["password"], st.secrets.passwords[st.session_state["username"]]
         ):
             st.session_state["password_correct"] = True
             del st.session_state["password"]  # Don't store the username or password.
@@ -30,46 +29,132 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
 
-    # Return True if the username + password is validated.
     if st.session_state.get("password_correct", False):
         return True
 
-    # Show inputs for username + password.
     login_form()
     if "password_correct" in st.session_state:
         st.error("😕 User not known or password incorrect")
     return False
 
-
+# Stop execution if password is incorrect
 if not check_password():
     st.stop()
 
+# Create two tabs
+tab1, tab2 = st.tabs(["Item Master Translation", "Demo Translation"])
 
-# Sample DataFrame (you can replace this with the real data from the image)
-data = {
-    'Item number': ['MI65789', 'MI65794', 'MI65797','MI1','MI2'],
-    'Name': ['AMX 3033GM-BL', 'CON-SNT-IE4000BT', 'CON-SNT-CBS25U08','DUMMY','DUMMY2'],
-    'Description': ['DECORA FACEPLATE 3 GANG BLACK', '8X SFP 10/100M, 4X1G LAN B', 'POWER CONN FOR GE, PAR L POE','Chair','Elevator']
-}
+# Tab 1: Item Master Translation
+with tab1:
+    st.title("GFT Item Master")
 
-df = pd.DataFrame(data)
+    # Read data from the uploaded template file
+    df = pd.read_excel("Template_with_dummy_data.xlsx")
+    print(df.columns)
+    df = df[["Itp","Item number","name","description","Sts","Item grp","U/M","P grp","Quality gr","Resp"]]
 
-# Streamlit app
-st.title("Data Display with Language Translation")
+    # Filters: LTP and Item number
+    st.subheader("Filter Data")
+    ltp_filter = st.text_input("Filter by LTP")
+    item_filter = st.text_input("Filter by Item number")
 
-# Language selection
-language = st.radio("Choose Language", ('English', 'French'))
+    # Apply filters
+    if ltp_filter:
+        df = df[df['LTP'].astype(str).str.contains(ltp_filter, case=False, na=False)]
+    if item_filter:
+        df = df[df['Item number'].astype(str).str.contains(item_filter, case=False, na=False)]
 
-def translate_dataframe(df, target_language):
-    """Translate all text columns of the DataFrame to the target language."""
-    df_translated = df.copy()
-    for col in df.columns:
-        df_translated[col] = df[col].apply(lambda x: GoogleTranslator(source='auto', target=target_language).translate(x))
-    return df_translated
-
-# Show DataFrame based on language selection
-if language == 'French':
-    df_translated = translate_dataframe(df, 'fr')
-    st.dataframe(df_translated)
-else:
+    # Show the filtered data
     st.dataframe(df)
+
+    # Language options
+    languages = ['English', 'French', 'Spanish', 'German', 'Japanese', 'Dutch', 'Portuguese', 'Italian']
+    language = st.radio("Choose Language", languages)
+
+    # Function to translate filtered DataFrame using DeepL API
+    def translate_to_language(df, target_language):
+        df_translated = df.copy()
+
+        # Function to check if a value is translatable (i.e., non-null and a string)
+        def translate_value(value):
+            if pd.notnull(value) and isinstance(value, str):
+                return translator.translate_text(value, target_lang=target_language).text
+            return value  # Return the original value if it's NaN, None, or numeric
+
+        # Apply the translation function to each column
+        for col in df.columns:
+            df_translated[col] = df[col].apply(translate_value)
+
+        return df_translated
+
+    # Language codes for translation
+    language_codes = {
+        'English': 'EN-US',
+        'French': 'FR',
+        'Spanish': 'ES',
+        'German': 'DE',
+        'Japanese': 'JA',
+        'Dutch': 'NL',
+        'Portuguese': 'PT',
+        'Italian': 'IT'
+    }
+
+    # Add a button to trigger translation (with unique key)
+    if st.button("Translate", key="translate_item_master"):
+        if language != 'English':
+            df_translated = translate_to_language(df, language_codes[language])
+            st.dataframe(df_translated)
+        else:
+            st.dataframe(df)
+
+# Tab 2: Demo Translation from English to German
+with tab2:
+    st.title("CRS630 - Accounting Identity - Open ")
+
+    # Read the demo document (Demo.xlsx)
+    df_demo = pd.read_excel("Demo.xlsx", header=0, skiprows=2, nrows=25, usecols=[0,1,2,3,4,5,6,7,8,9,10])
+
+    df_demo = df_demo.iloc[0:]
+
+    # Filter by Actng ID
+    actng_id_filter = st.text_input("Filter by Actng ID")
+
+    # Apply filter
+    if actng_id_filter:
+        df_demo = df_demo[df_demo['Actng ID'].astype(str).str.contains(actng_id_filter, case=False, na=False)]
+
+    # Show the filtered data
+    st.dataframe(df_demo)
+
+    # Add two radio buttons for English and German
+    language_demo = st.radio("Select Language", ["English", "German"], key="demo_language")
+
+    # Function to translate filtered data using DeepL API
+
+
+    def translate_to_language(df, target_language):
+        df_translated = df.copy()
+
+        # Function to check if a value is translatable (i.e., non-null and a string)
+        def translate_value(value):
+            if pd.notnull(value) and isinstance(value, str):
+                return translator.translate_text(value, target_lang=target_language).text
+            return value  # Return the original value if it's NaN, None, or numeric
+
+        # Apply the translation function to each column
+        for col in df.columns:
+            df_translated[col] = df[col].apply(translate_value)
+
+        return df_translated
+
+
+    # Add a button to trigger translation after language is selected (with unique key)
+    if st.button("Translate", key="translate_demo"):
+        if language_demo == "German":
+            df_demo_translated = translate_to_language(df_demo, "DE")
+            st.dataframe(df_demo_translated)
+        elif language_demo == "English":
+            df_demo_translated = translate_to_language(df_demo, "EN-US")
+            st.dataframe(df_demo_translated)    
+        else:
+            st.dataframe(df_demo)  # Show data as it is

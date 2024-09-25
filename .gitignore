@@ -4,10 +4,12 @@ __pycache__/
 *$py.class
 
 myenv/*
-
+.streamlit/*
+*.toml
+secrets.toml
 # C extensions
 *.so
-
+*.xlsx
 # Distribution / packaging
 .Python
 build/
