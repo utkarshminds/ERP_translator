@@ -146,7 +146,7 @@ with tab2:
         df_demo = df_demo[df_demo['Actng ID'].astype(str).str.contains(actng_id_filter, case=False, na=False)]
 
     # Add two radio buttons for English and German
-    language_demo = st.radio("Select Language", ["English", "German"], key="demo_language")
+    language_demo = st.radio("Select Language", ["English", "German"], key="demo_language", index=1)
 
 
     # Show the filtered data
