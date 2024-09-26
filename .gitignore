@@ -9,7 +9,7 @@ myenv/*
 secrets.toml
 # C extensions
 *.so
-*.xlsx
+
 # Distribution / packaging
 .Python
 build/

@@ -9,7 +9,7 @@ translator = deepl.Translator(DEEPL_API_KEY)
 
 # Function to check username and password
 def check_password():
-    """Returns `True` if the user had a correct password."""
+    """Returns True if the user had a correct password."""
 
     def login_form():
         """Form with widgets to collect user information"""
@@ -63,13 +63,16 @@ with tab1:
         df = df[df['LTP'].astype(str).str.contains(ltp_filter, case=False, na=False)]
     if item_filter:
         df = df[df['Item number'].astype(str).str.contains(item_filter, case=False, na=False)]
+    
+    # Language options
+    languages = ['English', 'French', 'Spanish', 'German', 'Japanese', 'Dutch', 'Portuguese', 'Italian']
+    language = st.radio("Choose Language", languages)
+
 
     # Show the filtered data
     st.dataframe(df)
 
-    # Language options
-    languages = ['English', 'French', 'Spanish', 'German', 'Japanese', 'Dutch', 'Portuguese', 'Italian']
-    language = st.radio("Choose Language", languages)
+
 
     # Function to translate filtered DataFrame using DeepL API
     def translate_to_language(df, target_language):
@@ -112,9 +115,28 @@ with tab2:
     st.title("CRS630 - Accounting Identity - Open ")
 
     # Read the demo document (Demo.xlsx)
-    df_demo = pd.read_excel("Demo.xlsx", header=0, skiprows=2, nrows=25, usecols=[0,1,2,3,4,5,6,7,8,9,10])
+    df_demo = {
+        'Heading': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        'Actng ID': ['013000', '013500', '015000', '016000', '017000', '018000', '019000', '020000', '021000', '022000'],
+        'Description': [
+            'Ähnliche Rechte und Werte', 'EDV-Software', 'Geschäfts- oder Firmenwert', 'Lizenzen', 
+            'Markenwert', 'Patent', 'Produktsoftware', 'Nutzungsrechte', 'Technologie', 'Wertschriften'
+        ],
+        'Div': [100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+        'A/C grp': ['BA050', 'BA040', 'BA040', 'BA040', 'BA040', 'BA050', 'BA050', 'BA040', 'BA050', 'BA050'],
+        'Bal': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        'P/L': [None]*10,
+        'A/R': [None]*10,
+        'A/P': [None]*10,
+        'Act': [4]*10,
+        'Cur': [None]*10,
+        'German to English': ['Similar rights and values', 'EDV Software', 'Goodwill', 'Licenses',
+                            'Brand value', 'Patent', 'Product software', 'Usage rights', 'Technology', 'Securities']
+    }
 
-    df_demo = df_demo.iloc[0:]
+    # Create the DataFrame
+    df_demo = pd.DataFrame(df_demo)
+
 
     # Filter by Actng ID
     actng_id_filter = st.text_input("Filter by Actng ID")
@@ -123,12 +145,14 @@ with tab2:
     if actng_id_filter:
         df_demo = df_demo[df_demo['Actng ID'].astype(str).str.contains(actng_id_filter, case=False, na=False)]
 
-    # Show the filtered data
-    st.dataframe(df_demo)
-
     # Add two radio buttons for English and German
     language_demo = st.radio("Select Language", ["English", "German"], key="demo_language")
 
+
+    # Show the filtered data
+    st.dataframe(df_demo)
+
+    
     # Function to translate filtered data using DeepL API
 
 
