@@ -69,11 +69,6 @@ with tab1:
     language = st.radio("Choose Language", languages)
 
 
-    # Show the filtered data
-    st.dataframe(df)
-
-
-
     # Function to translate filtered DataFrame using DeepL API
     def translate_to_language(df, target_language):
         df_translated = df.copy()
@@ -102,12 +97,10 @@ with tab1:
         'Italian': 'IT'
     }
 
-    # Add a button to trigger translation (with unique key)
-    if st.button("Translate", key="translate_item_master"):
-        if language != 'English':
+    if language != 'English':
             df_translated = translate_to_language(df, language_codes[language])
             st.dataframe(df_translated)
-        else:
+    else:
             st.dataframe(df)
 
 # Tab 2: Demo Translation from English to German
@@ -148,10 +141,6 @@ with tab2:
     # Add two radio buttons for English and German
     language_demo = st.radio("Select Language", ["English", "German"], key="demo_language", index=1)
 
-
-    # Show the filtered data
-    st.dataframe(df_demo)
-
     
     # Function to translate filtered data using DeepL API
 
@@ -173,12 +162,11 @@ with tab2:
 
 
     # Add a button to trigger translation after language is selected (with unique key)
-    if st.button("Translate", key="translate_demo"):
-        if language_demo == "German":
+    if language_demo == "German":
             df_demo_translated = translate_to_language(df_demo, "DE")
             st.dataframe(df_demo_translated)
-        elif language_demo == "English":
+    elif language_demo == "English":
             df_demo_translated = translate_to_language(df_demo, "EN-US")
             st.dataframe(df_demo_translated)    
-        else:
+    else:
             st.dataframe(df_demo)  # Show data as it is
